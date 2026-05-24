@@ -1,242 +1,286 @@
-# Task Master [![GitHub stars](https://img.shields.io/github/stars/eyaltoledano/claude-task-master?style=social)](https://github.com/eyaltoledano/claude-task-master/stargazers)
+# claude-task-master
 
-[![CI](https://github.com/eyaltoledano/claude-task-master/actions/workflows/ci.yml/badge.svg)](https://github.com/eyaltoledano/claude-task-master/actions/workflows/ci.yml) [![npm version](https://badge.fury.io/js/task-master-ai.svg)](https://badge.fury.io/js/task-master-ai) [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/taskmasterai?style=flat)](https://discord.gg/taskmasterai) [![License: MIT with Commons Clause](https://img.shields.io/badge/license-MIT%20with%20Commons%20Clause-blue.svg)](LICENSE)
+> **AI-driven task decomposition and dependency tracking for Claude Code projects** — structured task management that keeps multi-day projects on track
 
-### By [@eyaltoledano](https://x.com/eyaltoledano) & [@RalphEcom](https://x.com/RalphEcom)
+<p align="center">
+  <a href="https://github.com/hmzainjamil/claude-task-master/stargazers"><img src="https://img.shields.io/github/stars/hmzainjamil/claude-task-master?style=for-the-badge&labelColor=555&color=yellow" alt="Stars"/></a>
+  <a href="https://github.com/hmzainjamil/claude-task-master/network/members"><img src="https://img.shields.io/github/forks/hmzainjamil/claude-task-master?style=for-the-badge&labelColor=555&color=blue" alt="Forks"/></a>
+  <a href="https://github.com/hmzainjamil/claude-task-master/issues"><img src="https://img.shields.io/github/issues/hmzainjamil/claude-task-master?style=for-the-badge&labelColor=555&color=red" alt="Issues"/></a>
+  <a href="https://github.com/hmzainjamil/claude-task-master/pulls"><img src="https://img.shields.io/github/issues-pr/hmzainjamil/claude-task-master?style=for-the-badge&labelColor=555&color=purple" alt="PRs"/></a>
+  <a href="https://github.com/hmzainjamil/claude-task-master/commits/main"><img src="https://img.shields.io/github/last-commit/hmzainjamil/claude-task-master?style=for-the-badge&labelColor=555&color=green" alt="Last Commit"/></a>
+</p>
 
-[![Twitter Follow](https://img.shields.io/twitter/follow/eyaltoledano?style=flat)](https://x.com/eyaltoledano)
-[![Twitter Follow](https://img.shields.io/twitter/follow/RalphEcom?style=flat)](https://x.com/RalphEcom)
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18+-blue?style=flat&labelColor=555&logo=node.js"/>
+  <img src="https://img.shields.io/badge/npm-task--master--ai-red?style=flat&labelColor=555&logo=npm"/>
+  <img src="https://img.shields.io/badge/MCP-compatible-green?style=flat&labelColor=555"/>
+  <img src="https://img.shields.io/badge/Providers-Anthropic|OpenAI|Gemini|xAI-orange?style=flat&labelColor=555"/>
+  <img src="https://img.shields.io/badge/License-MIT_Commons-lightgrey?style=flat&labelColor=555"/>
+</p>
 
-A task management system for AI-driven development with Claude, designed to work seamlessly with Cursor AI.
+---
 
-## Requirements
+## Why This Exists
 
-Taskmaster utilizes AI across several commands, and those require a separate API key. You can use a variety of models from different AI providers provided you add your API keys. For example, if you want to use Claude 3.7, you'll need an Anthropic API key.
+Claude Code is a session-based tool — it has no memory of what you worked on yesterday. For projects spanning days or weeks, tasks get lost, dependencies break, and context is rebuilt from scratch every session. Task Master solves this by maintaining a persistent task graph that Claude reads at session start — instantly aware of status, blockers, and next steps.
 
-You can define 3 types of models to be used: the main model, the research model, and the fallback model (in case either the main or research fail). Whatever model you use, its provider API key must be present in either mcp.json or .env.
+Original by [@eyaltoledano](https://x.com/eyaltoledano) & [@RalphEcom](https://x.com/RalphEcom). This fork extends it with MAE integration and Tier 0 model routing.
 
-At least one (1) of the following is required:
+---
 
-- Anthropic API key (Claude API)
-- OpenAI API key
-- Google Gemini API key
-- Perplexity API key (for research model)
-- xAI API Key (for research or main model)
-- OpenRouter API Key (for research or main model)
+## At a Glance
 
-Using the research model is optional but highly recommended. You will need at least ONE API key. Adding all API keys enables you to seamlessly switch between model providers at will.
+| Feature | Detail |
+|---|---|
+| Task decomposition | AI breaks PRD/spec into atomic tasks with dependencies |
+| Dependency graph | DAG-based — no task starts until its dependencies complete |
+| Status tracking | `pending` → `in-progress` → `done` → `blocked` |
+| Multi-model support | Main model, research model, fallback model — each configurable |
+| Provider support | Anthropic, OpenAI, Gemini, Perplexity, xAI, OpenRouter |
+| MCP integration | Claude Code reads task graph natively via MCP server |
+| Cursor integration | Works as Cursor AI rule set |
+| Complexity analysis | AI estimates complexity and flags tasks needing subtask breakdown |
+| Research mode | Uses Perplexity for tasks requiring current information |
+| Task expansion | Single task → multiple subtasks on demand |
+| Progress reporting | Session-start briefing: what's done, what's next, what's blocked |
+| Subtask management | Nested tasks with independent status tracking |
 
-## Quick Start
+---
 
-### Option 1: MCP (Recommended)
+## 🧠 CONCEPTS
 
-MCP (Model Control Protocol) lets you run Task Master directly from your editor.
+| Concept | Description |
+|---|---|
+| **Task** | Atomic unit of work: id, title, description, status, dependencies, complexity |
+| **Dependency graph** | DAG where edges = "must complete before" relationships |
+| **Main model** | Primary model for task generation and implementation guidance |
+| **Research model** | Secondary model (Perplexity) for tasks requiring web search |
+| **Fallback model** | Backup when main/research fail — different provider |
+| **PRD parsing** | AI reads product requirements doc → generates complete task graph |
+| **Complexity score** | 1-10 scale; >7 triggers automatic subtask expansion |
+| **Tag system** | Tasks tagged by area: `backend` `frontend` `db` `devops` |
+| **Blocked state** | Task that can't proceed — blocker task ID recorded |
+| **Expansion** | Convert single task into N subtasks with own dependencies |
 
-#### 1. Add your MCP config at the following path depending on your editor
+### 🔥 Hot
 
-| Editor       | Scope   | Linux/macOS Path                      | Windows Path                                      | Key          |
-| ------------ | ------- | ------------------------------------- | ------------------------------------------------- | ------------ |
-| **Cursor**   | Global  | `~/.cursor/mcp.json`                  | `%USERPROFILE%\.cursor\mcp.json`                  | `mcpServers` |
-|              | Project | `<project_folder>/.cursor/mcp.json`   | `<project_folder>\.cursor\mcp.json`               | `mcpServers` |
-| **Windsurf** | Global  | `~/.codeium/windsurf/mcp_config.json` | `%USERPROFILE%\.codeium\windsurf\mcp_config.json` | `mcpServers` |
-| **VS Code**  | Project | `<project_folder>/.vscode/mcp.json`   | `<project_folder>\.vscode\mcp.json`               | `servers`    |
+- **Context-aware session start** — Claude reads `tasks.json` at every session start, immediately knows current state without manual recap
+- **Complexity-triggered expansion** — tasks scored >7 complexity automatically expand into subtasks before assignment
+- **Research-augmented planning** — complex technical tasks use Perplexity to pull current best practices before generating implementation steps
+- Source → [HMZ](https://github.com/hmzainjamil)
 
-##### Cursor & Windsurf (`mcpServers`)
+---
 
-```jsonc
-{
-  "mcpServers": {
-    "taskmaster-ai": {
-      "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-      "env": {
-        "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
-        "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
-        "OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
-        "GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
-        "MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
-        "OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
-        "XAI_API_KEY": "YOUR_XAI_KEY_HERE",
-        "AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE",
-        "OLLAMA_API_KEY": "YOUR_OLLAMA_API_KEY_HERE",
-      },
-    },
-  },
-}
+## ⚙️ HOW IT WORKS
+
+```
+1. Feed PRD/spec:
+   task-master parse-prd docs/spec.md
+
+2. Review generated tasks:
+   task-master list
+
+3. Get next task to work on:
+   task-master next
+
+4. Start task (tells Claude what to implement):
+   task-master start 5
+
+5. Mark complete:
+   task-master done 5
+
+6. Session start (Claude reads this automatically):
+   task-master status
 ```
 
-> 🔑 Replace `YOUR_…_KEY_HERE` with your real API keys. You can remove keys you don't use.
-
-##### VS Code (`servers` + `type`)
-
-```jsonc
-{
-  "servers": {
-    "taskmaster-ai": {
-      "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-      "env": {
-        "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
-        "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
-        "OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
-        "GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
-        "MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
-        "OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
-        "XAI_API_KEY": "YOUR_XAI_KEY_HERE",
-        "AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE",
-      },
-      "type": "stdio",
-    },
-  },
-}
+**Dependency resolution:**
+```
+task 3 depends on [1, 2]
+→ task-master next skips task 3 until 1 and 2 are done
+→ when both done, task 3 becomes available
 ```
 
-> 🔑 Replace `YOUR_…_KEY_HERE` with your real API keys. You can remove keys you don't use.
+---
 
-#### 2. (Cursor-only) Enable Taskmaster MCP
-
-Open Cursor Settings (Ctrl+Shift+J) ➡ Click on MCP tab on the left ➡ Enable task-master-ai with the toggle
-
-#### 3. (Optional) Configure the models you want to use
-
-In your editor's AI chat pane, say:
-
-```txt
-Change the main, research and fallback models to <model_name>, <model_name> and <model_name> respectively.
-```
-
-[Table of available models](docs/models.md)
-
-#### 4. Initialize Task Master
-
-In your editor's AI chat pane, say:
-
-```txt
-Initialize taskmaster-ai in my project
-```
-
-#### 5. Make sure you have a PRD (Recommended)
-
-For **new projects**: Create your PRD at `.taskmaster/docs/prd.txt`  
-For **existing projects**: You can use `scripts/prd.txt` or migrate with `task-master migrate`
-
-An example PRD template is available after initialization in `.taskmaster/templates/example_prd.txt`.
-
-> [!NOTE]
-> While a PRD is recommended for complex projects, you can always create individual tasks by asking "Can you help me implement [description of what you want to do]?" in chat.
-
-**Always start with a detailed PRD.**
-
-The more detailed your PRD, the better the generated tasks will be.
-
-#### 6. Common Commands
-
-Use your AI assistant to:
-
-- Parse requirements: `Can you parse my PRD at scripts/prd.txt?`
-- Plan next step: `What's the next task I should work on?`
-- Implement a task: `Can you help me implement task 3?`
-- Expand a task: `Can you help me expand task 4?`
-
-[More examples on how to use Task Master in chat](docs/examples.md)
-
-### Option 2: Using Command Line
-
-#### Installation
+## 🚀 INSTALL
 
 ```bash
-# Install globally
+# Global install
 npm install -g task-master-ai
 
-# OR install locally within your project
+# Or project-local
 npm install task-master-ai
-```
 
-#### Initialize a new project
-
-```bash
-# If installed globally
+# Initialize in project
+cd your-project
 task-master init
 
-# If installed locally
-npx task-master init
+# Configure API keys
+cp .env.example .env
+# Add: ANTHROPIC_API_KEY, OPENAI_API_KEY, PERPLEXITY_API_KEY
+
+# Add MCP server to Claude Code
+# In .claude/mcp.json:
+{
+  "mcpServers": {
+    "task-master": {
+      "command": "task-master",
+      "args": ["mcp"]
+    }
+  }
+}
 ```
 
-This will prompt you for project details and set up a new project with the necessary files and structure.
+---
 
-#### Common Commands
+## 📟 USAGE
 
 ```bash
-# Initialize a new project
-task-master init
+# Parse requirements doc into tasks
+task-master parse-prd docs/requirements.md
 
-# Parse a PRD and generate tasks
-task-master parse-prd your-prd.txt
-
-# List all tasks
+# List all tasks with status
 task-master list
 
-# Show the next task to work on
+# List by status
+task-master list --status pending
+task-master list --status blocked
+
+# Get next task (respects dependencies)
 task-master next
 
-# Generate task files
-task-master generate
+# Start working on a task
+task-master start <id>
+
+# Mark done
+task-master done <id>
+
+# Mark blocked with reason
+task-master block <id> --reason "waiting for DB schema approval"
+
+# Expand complex task into subtasks
+task-master expand <id>
+
+# Generate implementation plan for task
+task-master plan <id>
+
+# Update task details
+task-master update <id> --title "New title" --complexity 6
+
+# Show dependency graph
+task-master graph
+
+# Session briefing (run at Claude Code startup)
+task-master status
 ```
 
-## Documentation
+---
 
-For more detailed information, check out the documentation in the `docs` directory:
+## ⚙️ CONFIGURATION
 
-- [Configuration Guide](docs/configuration.md) - Set up environment variables and customize Task Master
-- [Tutorial](docs/tutorial.md) - Step-by-step guide to getting started with Task Master
-- [Command Reference](docs/command-reference.md) - Complete list of all available commands
-- [Task Structure](docs/task-structure.md) - Understanding the task format and features
-- [Example Interactions](docs/examples.md) - Common Cursor AI interaction examples
-- [Migration Guide](docs/migration-guide.md) - Guide to migrating to the new project structure
+| Variable | Required | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | ✓ (if using Claude) | Claude main model |
+| `OPENAI_API_KEY` | optional | OpenAI main or fallback |
+| `GOOGLE_GEMINI_API_KEY` | optional | Gemini main or research |
+| `PERPLEXITY_API_KEY` | recommended | Research model for current info |
+| `XAI_API_KEY` | optional | Grok for research or main |
+| `OPENROUTER_API_KEY` | optional | Multi-provider routing |
+| `MAIN_MODEL` | `claude-sonnet-4-5` | Primary model for task gen |
+| `RESEARCH_MODEL` | `sonar-pro` | Perplexity research model |
+| `FALLBACK_MODEL` | `gpt-4o-mini` | Fallback on failure |
+| `MAX_TOKENS` | `8192` | Max tokens per request |
+| `TASKS_FILE` | `tasks.json` | Task graph storage file |
+| `COMPLEXITY_THRESHOLD` | `7` | Auto-expand above this score |
 
-## Troubleshooting
+---
 
-### If `task-master init` doesn't respond:
+## 💡 TIPS AND TRICKS
 
-Try running it with Node directly:
+### Task Generation
+1. **Detailed PRD = better tasks** — more context in requirements doc → more accurate task decomposition. Include tech stack, constraints, non-goals. Source → [HMZ](https://github.com/hmzainjamil)
+2. **Tag tasks on create** — `task-master parse-prd --tags backend,api` scopes tag to all generated tasks. Source → [HMZ](https://github.com/hmzainjamil)
+3. **Complexity calibration** — run `task-master analyze` after generation to review complexity scores before starting. Source → [HMZ](https://github.com/hmzainjamil)
 
-```bash
-node node_modules/claude-task-master/scripts/init.js
+### Workflow Integration
+4. **Git hooks** — add `task-master done $TASK_ID` to post-commit hook to auto-update on commit. Source → [HMZ](https://github.com/hmzainjamil)
+5. **CLAUDE.md auto-load** — add `task-master status` to CLAUDE.md so Claude reads task state on every session. Source → [HMZ](https://github.com/hmzainjamil)
+6. **Paperclip sync** — pipe `task-master list --json` to Paperclip issue API for visibility in company OS. Source → [HMZ](https://github.com/hmzainjamil)
+
+### Multi-Provider
+7. **Perplexity for infra tasks** — any task tagged `devops` or `security` benefits from Perplexity's current knowledge. Source → [HMZ](https://github.com/hmzainjamil)
+8. **Fallback to OpenRouter** — configure OpenRouter as fallback — it routes to cheapest available model automatically. Source → [HMZ](https://github.com/hmzainjamil)
+9. **xAI for code-heavy tasks** — Grok-3 outperforms on complex code generation — assign as main model for `backend` tagged tasks. Source → [HMZ](https://github.com/hmzainjamil)
+
+### Debugging
+10. **Validate graph** — `task-master validate` checks for circular dependencies and orphaned tasks. Source → [HMZ](https://github.com/hmzainjamil)
+11. **Export to JSON** — `task-master export --format json` → feed into analytics dashboard. Source → [HMZ](https://github.com/hmzainjamil)
+12. **Reset stuck tasks** — `task-master reset <id>` resets to `pending` without losing metadata. Source → [HMZ](https://github.com/hmzainjamil)
+
+---
+
+## 🔧 TROUBLESHOOTING
+
+| Issue | Cause | Fix |
+|---|---|---|
+| `No API key found` | Missing env var | Add required key to `.env` |
+| Tasks not loading in Claude | MCP server not configured | Add task-master to `.claude/mcp.json` |
+| Circular dependency error | Tasks depend on each other | `task-master validate` → fix cycle |
+| Research model fails | No Perplexity key | Set `RESEARCH_MODEL` to Gemini or remove |
+| Task expansion produces duplicates | Idempotency issue | `task-master dedupe` |
+| Graph shows wrong dependencies | Manual edit corrupted JSON | `task-master repair` |
+| `next` returns blocked task | Blocker not resolved | `task-master done <blocker-id>` |
+| Status not updating in Claude | Claude cached old tasks | `task-master status` at session start |
+
+---
+
+## 📊 ARCHITECTURE
+
+```
+tasks.json (persistent store)
+    ↓
+MCP Server (task-master mcp)
+    ↓ exposes tools
+Claude Code session
+    ├── get_tasks()
+    ├── start_task(id)
+    ├── complete_task(id)
+    └── get_next_task()
+         ↓
+Dependency resolver
+    ↓
+AI planning engine (main model)
+    ↓
+Implementation guidance → Claude response
 ```
 
-Or clone the repository and run:
+---
 
-```bash
-git clone https://github.com/eyaltoledano/claude-task-master.git
-cd claude-task-master
-node scripts/init.js
-```
+## 🗺️ ROADMAP
 
-## Contributors
+- [ ] Team mode — multiple engineers, task assignment, conflict prevention
+- [ ] Time estimates — AI predicts hours per task based on complexity
+- [ ] Velocity tracking — tasks/day chart, sprint burn-down
+- [ ] GitHub Issues sync — bidirectional sync with GitHub Issues
+- [ ] Slack notifications — task status changes → Slack alerts
+- [ ] Budget integration — token cost per task tracked and totaled
 
-<a href="https://github.com/eyaltoledano/claude-task-master/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=eyaltoledano/claude-task-master" alt="Task Master project contributors" />
-</a>
+---
+
+## ☠️ STARTUPS / BUSINESSES
+
+Task Master is the difference between shipping in 2 weeks and 2 months. Projects without task graphs drift — context is lost, dependencies are forgotten, progress is invisible. With Task Master: Claude knows exactly where you are every morning, what to work on next, and what's blocking progress.
+
+**Agency workflow:** parse client SOW → auto-generate task graph → assign to engineers/agents → track progress → report to client. No project manager needed.
+
+---
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=eyaltoledano/claude-task-master&type=Timeline)](https://www.star-history.com/#eyaltoledano/claude-task-master&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=hmzainjamil/claude-task-master&type=Date)](https://star-history.com/#hmzainjamil/claude-task-master&Date)
 
-## Licensing
+---
 
-Task Master is licensed under the MIT License with Commons Clause. This means you can:
-
-✅ **Allowed**:
-
-- Use Task Master for any purpose (personal, commercial, academic)
-- Modify the code
-- Distribute copies
-- Create and sell products built using Task Master
-
-❌ **Not Allowed**:
-
-- Sell Task Master itself
-- Offer Task Master as a hosted service
-- Create competing products based on Task Master
-
-See the [LICENSE](LICENSE) file for the complete license text and [licensing details](docs/licensing.md) for more information.
+<p align="center">
+  Original by <a href="https://x.com/eyaltoledano">@eyaltoledano</a> & <a href="https://x.com/RalphEcom">@RalphEcom</a> · Maintained by <a href="https://github.com/hmzainjamil">HMZ</a>
+</p>
