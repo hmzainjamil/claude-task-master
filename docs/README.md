@@ -13,6 +13,9 @@ Start with the [root README](../README.md) for repository scope, install overvie
 - [Models](models.md): supported model configuration.
 
 ## Project references
+- [Scripts README](../scripts/README.md): source map for the CLI implementation and provider/configuration modules.
+- [Tests README](../tests/README.md): describes available Jest and end-to-end commands; not run in this docs update.
+- [Legacy alternate README](../README-task-master.md): older setup guidance retained in the repository; use the root README for current repository scope and verify instructions against current package metadata.
 
 - [CLI entry point](../bin/task-master.js)
 - [Task operations and commands](../scripts/modules/)
