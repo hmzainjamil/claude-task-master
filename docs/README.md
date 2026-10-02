@@ -1,22 +1,25 @@
-# Task Master Documentation
+# Task Master documentation
 
-Welcome to the Task Master documentation. Use the links below to navigate to the information you need:
+Start with the [root README](../README.md) for repository scope, install overview, source attribution, license, and safety notes.
 
-## Getting Started
+## User guides
 
-- [Configuration Guide](configuration.md) - Set up environment variables and customize Task Master
-- [Tutorial](tutorial.md) - Step-by-step guide to getting started with Task Master
+- [Tutorial](tutorial.md): install Task Master, connect an MCP client or use the CLI, and initialize a project.
+- [Configuration](configuration.md): project configuration, model selection, and API-key setup.
+- [Command reference](command-reference.md): CLI command examples.
+- [Task structure](task-structure.md): task and subtask data.
+- [Examples](examples.md): sample interactions and workflows.
+- [Migration guide](migration-guide.md): migration guidance.
+- [Models](models.md): supported model configuration.
 
-## Reference
+## Project references
 
-- [Command Reference](command-reference.md) - Complete list of all available commands
-- [Task Structure](task-structure.md) - Understanding the task format and features
+- [CLI entry point](../bin/task-master.js)
+- [Task operations and commands](../scripts/modules/)
+- [MCP server](../mcp-server/server.js)
+- [Package scripts and license metadata](../package.json)
+- [License text](../LICENSE)
 
-## Examples & Licensing
+The package metadata identifies [eyaltoledano/claude-task-master](https://github.com/eyaltoledano/claude-task-master) as the upstream repository. The license includes a Commons Clause. Review [LICENSE](../LICENSE) before redistribution or commercial use.
 
-- [Example Interactions](examples.md) - Common Cursor AI interaction examples
-- [Licensing Information](licensing.md) - Detailed information about the license
-
-## Need More Help?
-
-If you can't find what you're looking for in these docs, please check the [main README](../README.md) or visit our [GitHub repository](https://github.com/eyaltoledano/claude-task-master).
+Task generation and analysis send project context to the configured AI provider. Protect credentials and review provider data handling and usage costs.
